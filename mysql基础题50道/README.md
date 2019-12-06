@@ -329,6 +329,130 @@ from
 
 ## 12. 查询和“01”号同学所学课程完全相同的其他同学的学号(重点)
 
+        思路：
+                1. 找出01同学学的课
+                2. 从sorce表中找出所有 in　01课程的行，并且 s_id <>  '01'
+                3. group by s_id， 找出count = 01同学课的人
+
+```
+select  st.s_id as s_id, st.s_name as name
+from
+student as st
+where st.s_id in
+(
+        select  sc1.s_id as s_id
+        from score as sc1
+        where 
+        sc1.c_id in 
+        (
+                select sc2.c_id as c_id
+                from score as sc2
+                where sc2.s_id = '01'
+        ) and sc1.s_id <> '01'
+        group by sc1.s_id having count(sc1.c_id)  = (
+                select count(sc3.c_id) from score as sc3 where sc3.s_id = '01'
+        )
+)
+```
+
+        +------+------+                                                              
+        | s_id | name |                                                              
+        +------+------+                                                              
+        | 02   | 钱电 |                                                              
+        | 03   | 孙风 |                                                              
+        | 04   | 李云 |                                                              
+        +------+------+  
+
+## 13. 查询没学过"张三"老师讲授的任一门课程的学生姓名 和47题一样（重点，能做出来）
+        思路：
+                1. 找出张三老师的课程表
+                2. 找出上过任意一门的同学 in
+                3. student not in 表2
+
+
+```
+select  st.s_id as id, st.s_name as name
+from 
+student as st
+where 
+st.s_id not in (
+        select sc1.s_id
+        from 
+        score as sc1
+        where sc1.c_id in (
+                select  sc2.c_id
+                from (
+                        score as sc2
+                        left join
+                        course as co
+                        using(c_id)
+                ) 
+                where co.t_id = 
+                 (
+                        select te.t_id  from teacher as te where te.t_name = '张三'
+                )
+
+        )
+)
+```
+
+        +----+------+                                                                
+        | id | name |                                                                
+        +----+------+                                                                
+        | 06 | 吴兰 |                                                                
+        | 08 | 王菊 |                                                                
+        +----+------+ 
+
+## 15. 查询两门及其以上不及格课程的同学的学号，姓名及其平均成绩（重点）
+
+        思路：
+                1. where筛选 < 60
+                2. group by having count >= 2
+                3. avg()
+
+```
+select a.s_id as id, b.s_name as name, a.avg_score as avg
+from
+(select sc.s_id, avg(s_score) as avg_score  
+from
+score as sc
+where sc.s_score < 60
+group by sc.s_id
+having count(sc.s_score) >=2) as a
+left join
+student as b
+using(s_id)
+```
+        +----+------+---------+                                                      
+        | id | name | avg     |                                                      
+        +----+------+---------+                                                      
+        | 04 | 李云 | 33.3333 |                                                      
+        | 06 | 吴兰 | 32.5000 |                                                      
+        +----+------+---------+ 
+
+## 16. 检索"01"课程分数小于60，按分数降序排列的学生信息（和34题重复，不重点）
+
+        思路：
+                1. order by
+
+```
+select sc.s_id, st.s_name, sc.s_score
+from
+score as sc 
+inner join
+student as st
+using(s_id)
+where
+sc.c_id = '01' and  sc.s_score < 60
+order by sc.s_score desc
+```
+        +------+--------+---------+                                                  
+        | s_id | s_name | s_score |                                                  
+        +------+--------+---------+                                                  
+        | 04   | 李云   |      50 |                                                  
+        | 06   | 吴兰   |      31 |                                                  
+        +------+--------+---------+
+
 ## 测试数据
 
 1. 学生表
